@@ -202,3 +202,36 @@ that. We mark exactly the commit you submit.
   change it live.
 - No changes to the time. Questions: reply to the task email. If an answer matters
   for everyone, everyone gets it.
+
+
+  # Payment reminder assistant
+
+Python 3.11+, standard library only (no install, `requirements.txt` is empty).
+
+## Run (from inside `python/`)
+
+- Tests: `python -m unittest`
+- Plan: `python plan.py --invoices ../data/invoices.json --sent ../data/sent.json --today 2026-10-12 --out ../actions.json`
+- Page: `python app.py`, then open http://localhost:8000/ (env: `PORT`, `DATA_DIR`, `TODAY`)
+
+## Structure
+
+- `plan.py`: rules engine (`build_plan`) and the command line.
+- `messages.py`: fixed message templates for friendly, firm and final. No AI model, no key, no internet.
+- `app.py`: the owner's page. It calls `build_plan`, it has no copy of the rules.
+- `tests/`: rules, boundaries (2/3/9/10/23/24 days), bad data, sent.json cases, messages, page.
+- `RESEARCH.md`: answers to the 4 questions, from `sources/` only.
+
+## Decisions
+
+- Dates are strict `YYYY-MM-DD` (a regex first, then a real calendar check), so `2026-02-30` and `30/09/2026` are invalid.
+- Bad data is checked in the order of the task; a duplicate id is listed once and all copies are skipped.
+- Messages use only the invoice's own data: no fees, interest, deadlines or mention of earlier reminders. A test checks that no other figures appear.
+- Approvals live in memory while the app runs. The page checks that a decision is for a real planned firm/final reminder.
+- Bad `--today` or unreadable files: clear message on stderr, exit code 2. The page shows a plain error message instead.
+
+## Next, with more time
+
+- Save decisions to a file so they survive a restart, and send approved reminders.
+- Decide with the owner whether messages may mention fees or interest (see `RESEARCH.md`).
+- Add a browser test for the 390 px layout and keyboard use.
